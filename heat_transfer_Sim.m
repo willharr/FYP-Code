@@ -11,8 +11,8 @@ close all
 L = 0.1;
 W = 0.05;
 
-N = 20;
-M = 20;
+N = 100;
+M = 100;
 
 dx = L/(N);
 dy = W/(M);
@@ -34,50 +34,65 @@ du = u;
 %nozzle gas properties
 gamma = 1.13; %CEA
 mach = 1;
-molar_mass = 0.032; %kg/mol, from CEA mass fractions of products
+
+molar_mass = 0.032;%kg/mol, from CEA mass fractions of products
+molar_mass_i = convmass(molar_mass,'kg','lbm');
+
 Dia = 0.05;
+Dia_i = convlength(Dia,'m','in');
+
 r_throat = 1;
 
 Pr = (4*gamma)/(9*gamma-5); %[1]
 r = Pr^0.33; %[1]
+
 T_ns = 3300; %K
-mu = (46.6*10e-10)*molar_mass^(0.5)*convtemp(T_ns,'K','R')^0.6; %[1]
-P_throat = 16.7e5; %bar
+T_ns_i = convtemp(T_ns,'K','F');
+
+mu_i = (46.6*10e-10)*molar_mass_i^(0.5)*convtemp(T_ns,'K','F')^0.6; %[1]
+P_throat = 16.7e5; %Pa
+P_throat_i = convpres(P_throat,'Pa','psi');
+
 c_star = 1406; %m/s
-Cp_g = 1727 %J/kg*K
+c_star_i = convvel(c_star,'m/s','ft/s');
+
+Cp_g = 1727; %J/kg*K
+Cp_g_i = 4.125e-1; %BTU/lb*R
 
 %wall material properties - COPPER
 C_w = 376; %J/kg*K 
-k = 5; %conduction constant
+k = 413; %conduction constant
 
 %% Timestep
 tfin = 1;
 
 dtmax = 0.25*dx*dy/k; 
-%dt = input('Input timestep: ');
-dt = dtmax/2;
+dt = input('Input timestep: ');
+%dt = dtmax/2;
 
 C = k*dt/(dx*dy);
 
 %% Intial Conditions
 
-u(1,:) = 200;
-u(M,:) = 200;
+u(1,:) = 400;
+u(M,:) = 400;
 
 %% Calculation Loop
 t = 0;
-hold on
+
 while t<tfin
     
     t = t+dt
     
     
-    T_aw = T_ns*((1+r*((gamma-1)/2)*(M^2))/(1+((gamma-1)/2)*(M^2)));
-    sigma = (((0.5*(u(1,N/2)/T_ns)*(1+((gamma-1)/2)*mach^2)+0.5)^(0.68))*(1+((gamma-1)/2)*mach^2)^0.12)^(-1);
-    h = ((0.026/Dia^(0.2))*(((mu^0.2)*Cp_g)/Pr^0.6)*((P_throat/c_star)^0.8)*(Dia/r_throat)^0.1)*(4.5^0.9)*sigma;
+    T_aw = T_ns_i*((1+r*((gamma-1)/2)*(M^2))/(1+((gamma-1)/2)*(M^2)));
+    sigma = (((0.5*(u(1,N/2)/T_ns_i)*(1+((gamma-1)/2)*(mach^2))+0.5)^(0.68))*(1+((gamma-1)/2)*mach^2)^0.12)^(-1);
+    h_i = ((0.026/Dia_i^(0.2))*(((mu_i^0.2)*Cp_g_i)/Pr^0.6)*((P_throat_i/c_star_i)^0.8)*(Dia_i/r_throat)^0.1)*(4.5^0.9)*sigma;
     
+    h = h_i/2.044e4;
     q = h*(T_aw-u(1,N/2));
-    u(1,:) = q*C_w;
+    u(1,:) = q*C_w*W^2;
+    disp(u(1,1))
     
     for i = 2:M-1
         for j = 2:N-1
