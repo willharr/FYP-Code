@@ -82,7 +82,7 @@ disp(dtmax)
 dt = input('Input timestep: ');
 %dt = dtmax/2;
 
-const = k*dt/(dx*dy);
+const = k*dt/dx;
 
 %% Intial Conditions
 
@@ -99,7 +99,7 @@ while t<tfin
     for i = 2:M-1
         for j = 2:N-1
             
-            du(i,j) = const*(u(i+1,j)+u(i-1,j)+u(i,j+1)+u(i,j-1)-4*u(i,j));
+            du(i,j) = const*(u(i+1,j)+u(i-1,j)-2*u(i,j));
             
         end
     end
