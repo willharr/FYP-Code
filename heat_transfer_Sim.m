@@ -12,11 +12,11 @@ close all
 
 %% Grid Setup
 
-L = 1; %m
-W = 1; %m
+L = 0.1; %m
+W = 0.01; %m
 
-N = 20;
-M = 22;
+N = 2;
+M = 6;
 
 dx = L/(N);
 dy = W/(M);
@@ -89,6 +89,10 @@ const = k*dt/dx;
 u(1,:) = temp_init;
 u(M,:) = temp_init;
 
+
+%% Steady State Calculation
+
+
 %% Calculation Loop
 t = 0;
 while t<tfin
@@ -117,7 +121,7 @@ while t<tfin
     
     h_g = h_g_i/2.044e4; %convert heat transfer coeff to SI
     q_g = h_g*(T_aw_g-u(1,1));
-    Q_g = q_g*C_w*dx;
+    Q_g = q_g*C_w*dx; %mislabelled
     
     du(1,:) = du(1,:) + Q_g ; %set nozzle side temp change w.r.t. heat transfer
     
