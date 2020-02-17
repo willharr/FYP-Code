@@ -59,7 +59,7 @@ T_w_g = convtemp(800,'K','R');
 %% Modelling
 model = createpde('thermal','transient');
 
-geom = decsg([3,4,0,0,0.1,0.1,0,0.005,0.005,0]');
+geom = decsg([3,4,0,0,0.1,0.1,0,0.1,0.1,0]');
 
 geometryFromEdges(model,geom);
 
@@ -76,7 +76,7 @@ thermalBC(model,'Edge',4,'HeatFlux',nozzleVal);
 
 thermalIC(model,500);
 
-tlist = 0:0.1:1;
+tlist = 0:0.1:10;
 
 generateMesh(model);
 
@@ -91,7 +91,7 @@ pdeplot(model,'XYData',T(:,end),'Contour','on',...
                      'FlowData',[qx(:,end),qy(:,end)],'ColorMap','hot')
                  
 figure(2)
-plot(1:11,results.Temperature(100,:));
+plot(T(:,length(T/2)));
 
 
 for i = 1:11
@@ -166,13 +166,14 @@ Pr = (mu_nos*C_nos)/k_nos;
 
 d = 0.2; %in, coolant channel diameter
 
-mdot = 1; %kg/s
+mdot = 0.1; %kg/s
 mdot_i = convmass(mdot,'kg','lbm');
 G_i = mdot_i/(pi*d^2*4); %lbm/in^2*s
 
 h_c_i = ((0.029*Cp_nos_i*(mu_nos_i^0.2))/(Pr^(2/3)))*((G_i^0.8)/(d^0.2))*(T_c_i/convtemp(state.u,'K','R'))^0.55;
 
 h_c = h_c_i*(2.941e6); 
+
 q_dot = h_c*(T_aw_c-state.u);
 end
 

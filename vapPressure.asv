@@ -1,10 +1,9 @@
 function [p] = vapPressure(fluid,T)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
-
-if T >= fluid.T_crit
+if T >= n2o.T_crit
     
-   disp('ERROR: T out of range') 
+   disp('T out of range') 
    return
     
 end
