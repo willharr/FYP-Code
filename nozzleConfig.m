@@ -9,16 +9,16 @@ close all
 
 %% Inputs
 
-type = 'conical'
+type = 'conical';
 
 Pcc = 35e5; %combustion chamber pressure
-gamma = 1.13; %specific heat ratio
+gamma = 1.1726; %specific heat ratio
 Patm = 101325; %ambient (exit) pressure
-Rcc = 0.025; %combustion chamber diameter
-m_dot = 0.1; %kg/s, total mass flow rate
+Rcc = 0.020; %combustion chamber diameter
+m_dot = 0.150; %kg/s, total mass flow rate
 m_molar = 30.53e-3; %kg/mol of reaction products
 R_gas = 8.314/m_molar; %specific gas constant for exhaust gases
-Tcc = 3336;
+Tcc = 3252;
 c_star = 1400;
 g = 9.81;
 
@@ -28,7 +28,7 @@ exp_ratio = ( ((2/(gamma+1))^(1/(gamma-1))) * ((Pcc/Patm)^(1/gamma)) )*(sqrt( ((
 Pthroat = Pcc*(2/(gamma+1))^(gamma/(gamma-1)); %pressure at throat
 
 Acc = pi*Rcc^2;
-At = m_dot*((Pcc/sqrt(Tcc))*sqrt(gamma/R_gas)*((gamma+1)/2)^(-(gamma+1)/(2*(gamma-1))))^(-1);
+At = m_dot*(sqrt(Tcc)/Pcc)*sqrt(R_gas/gamma)*((gamma+1)/2)^((gamma+1)/(2*(gamma-1)));
 Ae = exp_ratio*At;
 
 Rt = sqrt(At/pi);
