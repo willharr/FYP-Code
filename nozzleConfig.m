@@ -182,22 +182,38 @@ end
 
 %% Plotting
 
+width = 18;
+height = 15;
+
 figure % Conical nozzle contour
-plot(x_array,y_con,'k',[x_array(1) x_array(end)],[0 0],'-.b')
+plot(x_array*1000,y_con*1000,'k',[x_array(1)*1000 x_array(end)*1000],[0 0],'-.b')
 grid on
-axis('image')
+axis('equal')
+xlabel('Axial Position from Throat [mm]')
+ylabel('Radial Position from Centerline [mm]')
+legend('Nozzle Wall','Centerline')
+set(gca,'FontSize',14)
 
 figure % nozzle flow properties with x
-plot(x_array,M_con,'k',x_array,T_con,'r',x_array,P_con,'b');
+plot(x_array*1000,M_con,'k',x_array*1000,T_con,'r',x_array*1000,P_con,'b');
 legend('M','T','P')
+xlabel('Axial Position from Throat [mm]')
+ylabel('Temperature/Pressure Ratio, Mach Number')
 grid on
+set(gca,'FontSize',14)
+set(gcf,'units','centimeters','position',[5,5,width,height])
 
 figure % nozzle heat transfer coeff with x
-plot(x_array,h_g)
+plot(x_array*1000,h_g)
+xlabel('Axial Position from Throat [mm]')
+ylabel('h_n [W/m^2 K]')
 grid on
+set(gca,'FontSize',14)
+set(gcf,'units','centimeters','position',[5,5,width,height])
 
-figure
-plot(x_array,h_g_simple)
-grid on
+
+% figure
+% plot(x_array,h_g_simple)
+% grid on
 
 

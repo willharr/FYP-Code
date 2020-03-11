@@ -45,6 +45,7 @@ nozzle = nozzleGeometry(nozzle);
 nozzle.M_array = unique(nozzle.M_array);
 nozzle.x_array = unique(nozzle.x_array);
 nozzle.A_array = unique(nozzle.A_array);
+nozzle.y_array = unique(nozzle.y_array,'stable');
 save nozzle
 
 %% Geometry Definition
@@ -81,10 +82,10 @@ nozzleVal = @nozzleFlux;
 
 % Set boundary conditions
 %thermalBC(model,'Edge',2,'HeatFlux',coolVal);
-thermalBC(model,'Edge',2,'Temperature',T_c);
+thermalBC(model,'Edge',4,'Temperature',T_c);
 thermalBC(model,'Edge',3,'HeatFlux',0);
 thermalBC(model,'Edge',1,'HeatFlux',0);
-thermalBC(model,'Edge',4,'HeatFlux',nozzleVal);
+thermalBC(model,'Edge',2,'HeatFlux',nozzleVal);
 
 %Set initial condition
 thermalIC(model,500);
@@ -127,20 +128,54 @@ Q_vap = heatVaporisation(n2o)*m_dot_c*quality;
 deltaT = (Qy-Q_vap)/(m_dot_c*C_nos);
 
 %% Plotting 
-
-figure(1)
-pdeplot(model,'XYData',T_model(:,end),'Contour','on',...
-                     'FlowData',[qx_history(:,end),qy_history(:,end)],'ColorMap','hot')
-%axis('equal')
+%------------------------------------------------
+figure
+pdeplot(model,'XYData',T_model(:,end),'Contour','on','ColorMap','hot')
+daspect([5 1 1])
+hold on
+plot(nozzle.x_array,(nozzle.y_array/10)-3e-3,'k',[nozzle.x_array(1) nozzle.x_array(end)],[-3e-3 -3e-3],'-.b')
+xlabel('Axial Position from Throat [m]')
+ylabel('Radial Position from Centerline [m]')
+axis('tight')
+set(gca,'FontSize',14)
 grid on
-                 
-figure(2) %convergence check
+box on
+%------------------------------------------------
+% ploth = 4;
+% plotw = 10;
+% 
+% figure
+% subplot(3,1,1,'Position',[1,10,plotw,ploth])
+% pdeplot(model,'XYData',T_model(:,end),'Contour','on','ColorMap','hot')
+% daspect([10 1 1])
+% grid on 
+% box on
+% 
+% subplot(3,1,2,'Position',[1,10-ploth-1,plotw,ploth])
+% pdeplot(model,'XYData',T_model(:,end),'Contour','on','ColorMap','hot')
+% grid on
+% daspect([1 1 1])
+% 
+% subplot(3,1,3,'Position',[1,10-(2*ploth)-1,plotw,ploth])
+% plot(nozzle.x_array,nozzle.y_array,'k',[nozzle.x_array(1) nozzle.x_array(end)],[0 0],'-.b')
+% grid on
+% daspect([1 1 1])
+% xlabel('Axial Position from Throat [mm]')
+% ylabel('Radial Position from Centerline [mm]')
+% legend('Nozzle Wall','Centerline')
+
+%-----------------------------------------------------                 
+figure %convergence check
 hold on 
 plot(T_model(floor(n_mesh/2),:),'b');
 plot(T_model(floor(n_mesh/4),:),'r');
-plot(T_model(floor((3*n_mesh)/4),:),'g');
+plot(T_model(floor((3*n_mesh)/4),:),'k');
 hold off
 grid on
+box on
+xlabel('Time [ms]')
+ylabel('Temperature')
+set(gca,'FontSize',14)
 
 if animate == 1
 for i = 1:t_fin/t_step

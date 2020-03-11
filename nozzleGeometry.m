@@ -85,5 +85,6 @@ function [nozzle] = nozzleGeometry(nozzle)
     nozzle.R = R;
     nozzle.x_array = x_array;
     nozzle.At = At;
+    nozzle.y_array = y_con;
 end
 

@@ -2,7 +2,7 @@ function [c] = conductLiquid(fluid)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
-if T >= fluid.T_crit
+if fluid.T >= fluid.T_crit
     
    disp('ERROR: T out of range') 
    return
