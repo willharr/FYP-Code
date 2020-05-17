@@ -26,10 +26,10 @@ function [nozzle] = nozzleGeometry(nozzle)
     At = m_dot*(sqrt(Tcc)/Pcc)*sqrt(R_gas/gamma)*((gamma+1)/2)^((gamma+1)/(2*(gamma-1)));
     Ae = exp_ratio*At;
 
-    Rt = sqrt(At/pi);
+    Rt = sqrt(At/pi); %throat radius
     Re = sqrt(Ae/pi);
     Rcc = sqrt(Acc/pi);
-    R = Rt;
+    R = Rt; %throat curvature radius
 
 
     %% Conical Nozzle - Radiused
@@ -59,12 +59,11 @@ function [nozzle] = nozzleGeometry(nozzle)
             y_con(i) = tand(180-beta)*(x_arr1(i)-x_inlet) + Rcc;
             y_con(i+n) = -sqrt((R^2) - (x_arr2(i)^2)) + Rt+R;
             y_con(i+2*n) = tand(alpha)*(x_arr3(i)-x_radOut) + Rt+R*(1-cosd(alpha));
-
+          
         end
 
         for i = 1:3*n
-
-
+            
             A_con(i) = pi.*y_con(i).^2;
 
             if x_array(i) <= 0
@@ -78,7 +77,13 @@ function [nozzle] = nozzleGeometry(nozzle)
         end
 
     end
+    y_inlet = y_con(1);
+    y_radIn = y_con(n);
+    y_radOut = y_con(n*2);
+    y_outlet = y_con(n*3);
     
+    nozzle.geomBounds = [x_inlet, x_radIn, x_radOut, x_outlet; y_inlet, y_radIn, y_radOut, y_outlet];
+    nozzle.S = sum(pi.*(y_con.^2));
     nozzle.A_array = A_con;
     nozzle.M_array = M_con;
     nozzle.Rt = Rt;

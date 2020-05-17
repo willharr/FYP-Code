@@ -23,7 +23,7 @@ pcc = Pcc_def*ones(1,n);
 pa = Pa_def*ones(1,n);
 exp = exp_def*ones(1,n);
 
-gamma = linspace(gamma_def*0.5,gamma_def*1.5,n);
+% gamma = linspace(gamma_def*0.5,gamma_def*1.5,n);
 for i = 1:n  
     
     gamma_struct.c_star(i) = sqrt(g*gamma(i)*R(i)*T(i))/(gamma(i)*sqrt((2/(gamma(i)+1))^((gamma(i)+1)/(gamma(i)-1))));

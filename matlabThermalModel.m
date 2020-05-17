@@ -1,13 +1,14 @@
-%Thermal Conduction Model with MATLAB
+% Thermal Conduction Model with variable boundary conditions
 % Will Harradence
 % Imperial Aeronautics 2019/20
+% FYP 
 
 %% Setup and Options
 close all
 clear
 clc
 
-load n2o
+load n2o %loads nitrous virial equations data file - OBSOLETE WITH COOLPROP
 
 animate = 0; % option to plot animated change in temperature
 
@@ -29,7 +30,15 @@ n2o.T = T_c;
 g = 9.81;
 g_i = convvel(9.81,'m/s','ft/s');
 
+%% Environmental Conditions
+
+T_amb = 293;
+P_amb = 101535;
+
 %% Nozzle Flow Properties
+%gets variation in flow properties through a supersonic con-di nozzle with
+%axial distance, given a set of input parameters and assuming a conical
+%expansion section. Combustion properties are given by NASA tool CEAOnline
 
 nozzle.Pcc = 35e5; %combustion chamber pressure
 nozzle.gamma = 1.1726; %specific heat ratio
@@ -37,25 +46,25 @@ nozzle.Patm = 101325; %ambient (exit) pressure
 nozzle.Rcc = 0.020; %combustion chamber diameter
 nozzle.m_dot = 0.150; %kg/s, total mass flow rate
 nozzle.m_molar = 30.53e-3; %kg/mol of reaction products
-nozzle.Tcc = 3252;
-nozzle.c_star = 1400;
-nozzle.g = 9.81;
+nozzle.Tcc = 3252; %combustion chamber stagnation temperature
+nozzle.c_star = 1400; %characteristic velocity
+nozzle.g = 9.81; %gravity
 
 nozzle = nozzleGeometry(nozzle);
-nozzle.M_array = unique(nozzle.M_array);
-nozzle.x_array = unique(nozzle.x_array);
-nozzle.A_array = unique(nozzle.A_array);
-nozzle.y_array = unique(nozzle.y_array,'stable');
-save nozzle
+nozzle.M_array = unique(nozzle.M_array); %variation of Mach with x
+nozzle.x_array = unique(nozzle.x_array); %array of x positions
+nozzle.A_array = unique(nozzle.A_array); %variation of area with x
+nozzle.y_array = unique(nozzle.y_array,'stable'); %variation of radius with x
+save nozzle 
 
 %% Geometry Definition
 % Currently only supports rectangular 2D wall geometry, representing a full
-% cross section at an arbitrary given radial position
+% wall cross section at an arbitrary radial position
 
-geom_w = 0.002; %through wall thickness
+geom_w = 0.002; %through wall thickness, [m]
 geom_x = [nozzle.x_array(end) nozzle.x_array(end) nozzle.x_array(1) nozzle.x_array(1)]; %list of x_coordinates of verticies
 geom_y = [geom_w/2 -geom_w/2 -geom_w/2 geom_w/2]; %list of y_coordinates of verticies
-
+geom_circ = [1 0 nozzle.Rt+nozzle.R nozzle.R];
 geom_mat = [3 4 geom_x geom_y]'; %see below
 %{
 formats geometry matrix for the decsg function, specifying:
@@ -65,6 +74,11 @@ geom_x - list of x-coordinates of verticies
 geom_y - list of y-coordinates of verticies
 %}
 
+%Coolant Channel Geometry
+channel_h = 0.005; %height (radial)
+channel_d = 0.005; %depth (circumferential)
+channel_A = channel_h*channel_d; %area
+
 %% Modelling
 
 model = createpde('thermal','transient'); %generate pde object
@@ -72,23 +86,30 @@ model = createpde('thermal','transient'); %generate pde object
 geom = decsg(geom_mat); %generate geometry
 geometryFromEdges(model,geom); %add geometry to model
 
-thermalProperties(model,'ThermalConductivity',k,'MassDensity',8960,'SpecificHeat',C_w); %apply thermal properties to model
+thermalProperties(model,'ThermalConductivity',k,'MassDensity',8960,'SpecificHeat',C_w); %apply thermal properties to model, in this case a copper wall
 
-pdegplot(model,'EdgeLabels','on') %plot geometry with labelled edges;
+pdegplot(model,'EdgeLabels','on') %plot geometry with labelled edges
 
-%set BC function handles
+%set BC function handles - probably not needed, could just put handles
+%straight into BC function calls
 coolVal = @coolantFlux; 
 nozzleVal = @nozzleFlux;
 
 % Set boundary conditions
-%thermalBC(model,'Edge',2,'HeatFlux',coolVal);
-thermalBC(model,'Edge',4,'Temperature',T_c);
+
+%coolant side
+%thermalBC(model,'Edge',4,'HeatFlux',coolVal); %supercritical coolant
+thermalBC(model,'Edge',4,'Temperature',T_c); %nucleate boiling coolant
+
+%side walls - insulated
 thermalBC(model,'Edge',3,'HeatFlux',0);
 thermalBC(model,'Edge',1,'HeatFlux',0);
+
+%hot gas side
 thermalBC(model,'Edge',2,'HeatFlux',nozzleVal);
 
 %Set initial condition
-thermalIC(model,500);
+thermalIC(model,500); %500K initial guess 
 
 %Set timesteps (for plotting/data collection only, not related to
 %simulation)
@@ -105,27 +126,38 @@ T_model = results.Temperature; %extract temperature data
 
 [n_mesh, ~] = size(T_model);
 
-%% Evaluating heat capacity of coolant
+%% Coolant Evaluation
+% NB using beta for volumetric flow quality to avoid confusion with heat,
+% Q, however CoolProp uses Q for quality.
 
-[qx_history,qy_history] = evaluateHeatFlux(results); %get heat flux 
+[~, q_dot_c] = evaluateHeatFlux(results,nozzle.x_array,ones(1,length(nozzle.x_array))*(geom_w/2),tlist(end));
+Q_c = trapz(nozzle.x_array,(q_dot_c'.*nozzle.y_array*pi*2));
 
-qy = qy_history(:,end); %get qy at final timestep
+%tank conditions
+T_T = T_amb; %tank temp
+P_T = py.CoolProp.CoolProp.PropsSI('P','T',T_amb,'Q',0,'N2O'); %tank pressure
+h_T = py.CoolProp.CoolProp.PropsSI('H','P',P_T,'Q',0,'N2O'); %tank enthalpy
+beta_T = 0;
 
-% Get nitrous density at a given quality
-rho_l = densityLiquid(n2o); 
-rho_vap = densityVap(n2o);
-quality = 0.5; %coolant flow quality
-rho_nos = quality*rho_l + (1-quality)*rho_vap;
+%inlet conditions
+lineLoss = 10e5; %10 bar pressure loss in feed system
 
-m_dot_c = 0.1; %kg/s
+h_1 = h_T; %ideal line losses are adiabatic
+P_1 = P_T - lineLoss; %pressure at entrance to coolant loop
+T_1 = py.CoolProp.CoolProp.PropsSI('T','P',P_1,'H',h_T,'N2O');
+beta_1 = py.CoolProp.CoolProp.PropsSI('Q','P',P_1,'H',h_T,'N2O');
 
-h_channel = 0.005^2; % 5cm channel
+%cooling segment
+h_vap_1 = coolPropNos('H','P',P_1,'Q',1)-coolPropNos('H','P',P_1,'Q',0);
+quality_limit = 0.5;
+cool_cap = (quality_limit*h_vap_1)+coolPropNos('H','P',P_1,'Q',0) - h_1;
+m_dot_cool = Q_c/cool_cap;
 
-Qy = -trapz(qy)*(((nozzle.x_array(end)-nozzle.x_array(1))*rho_nos*h_channel)/m_dot_c); 
 
-Q_vap = heatVaporisation(n2o)*m_dot_c*quality;
 
-deltaT = (Qy-Q_vap)/(m_dot_c*C_nos);
+
+
+
 
 %% Plotting 
 %------------------------------------------------
@@ -140,31 +172,7 @@ axis('tight')
 set(gca,'FontSize',14)
 grid on
 box on
-%------------------------------------------------
-% ploth = 4;
-% plotw = 10;
-% 
-% figure
-% subplot(3,1,1,'Position',[1,10,plotw,ploth])
-% pdeplot(model,'XYData',T_model(:,end),'Contour','on','ColorMap','hot')
-% daspect([10 1 1])
-% grid on 
-% box on
-% 
-% subplot(3,1,2,'Position',[1,10-ploth-1,plotw,ploth])
-% pdeplot(model,'XYData',T_model(:,end),'Contour','on','ColorMap','hot')
-% grid on
-% daspect([1 1 1])
-% 
-% subplot(3,1,3,'Position',[1,10-(2*ploth)-1,plotw,ploth])
-% plot(nozzle.x_array,nozzle.y_array,'k',[nozzle.x_array(1) nozzle.x_array(end)],[0 0],'-.b')
-% grid on
-% daspect([1 1 1])
-% xlabel('Axial Position from Throat [mm]')
-% ylabel('Radial Position from Centerline [mm]')
-% legend('Nozzle Wall','Centerline')
-
-%-----------------------------------------------------                 
+              
 figure %convergence check
 hold on 
 plot(T_model(floor(n_mesh/2),:),'b');
@@ -176,6 +184,13 @@ box on
 xlabel('Time [ms]')
 ylabel('Temperature')
 set(gca,'FontSize',14)
+
+[qx,qy] = evaluateHeatFlux(results);
+figure
+pdeplot(model,'XYData',results.Temperature(:,end), ...
+                     'Contour','on',...
+                     'FlowData',[qx(:,end),qy(:,end)], ...
+                     'ColorMap','hot')
 
 if animate == 1
 for i = 1:t_fin/t_step
@@ -292,9 +307,16 @@ h_c = h_c_i*(2.941e6);
 q_dot = h_c*(T_aw_c-state.u);
 end
 
+function out = coolPropNos(out_type,in1_type,in1,in2_type,in2)
+
+    out = py.CoolProp.CoolProp.PropsSI(out_type,in1_type,in1,in2_type,in2,'N2O');
+    
+end
+
 %{
 References
 
-[1]Bartz
-[2]Huzel and Huang
+[1]Bartz (1959)
+[2]Huzel and Huang (1992)
+
 %}
