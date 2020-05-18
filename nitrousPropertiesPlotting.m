@@ -68,8 +68,8 @@ legend('Saturation Line','Critical Lines')
 set(gca,'FontSize',16)
 set(gcf,'units','centimeters','position',[5,5,width,height])
 
-
-figure
+%-----------------------------------------------------------------
+figure % P-H diagram
 plot(H_L/1e3,P_arr/1e5,'-b','LineWidth',3)
 hold on
 plot(H_G/1e3,P_arr/1e5,'-r','LineWidth',3)
@@ -83,6 +83,8 @@ ylabel('Pressure [bar]')
 legend('Saturated Liquid','Saturated Vapour','Isotherms','orientation','horizontal','Location','northoutside')
 set(gca,'FontSize',16)
 set(gcf,'units','centimeters','position',[5,5,width,height])
+%---------------------------------------------------------------------------
+
 
 figure
 plot(T,heatVap/1e3,'LineWidth',3)

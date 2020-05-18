@@ -130,38 +130,33 @@ T_model = results.Temperature; %extract temperature data
 % NB using beta for volumetric flow quality to avoid confusion with heat,
 % Q, however CoolProp uses Q for quality.
 
-[~, q_dot_c] = evaluateHeatFlux(results,nozzle.x_array,ones(1,length(nozzle.x_array))*(geom_w/2),tlist(end));
-Q_c = trapz(nozzle.x_array,(q_dot_c'.*nozzle.y_array*pi*2));
+[~, q_dot_c] = evaluateHeatFlux(results,nozzle.x_array,ones(1,length(nozzle.x_array))*(geom_w/2),tlist(end)); %Gets 2D heat flux on coolant surface at steady state
+Q_c = trapz(nozzle.x_array,((q_dot_c'.*nozzle.y_array)*pi*2)); %generates 3D (total surface) heat flux accounting for changing diameter of nozzle.
 
 %tank conditions
 T_T = T_amb; %tank temp
-P_T = py.CoolProp.CoolProp.PropsSI('P','T',T_amb,'Q',0,'N2O'); %tank pressure
-h_T = py.CoolProp.CoolProp.PropsSI('H','P',P_T,'Q',0,'N2O'); %tank enthalpy
-beta_T = 0;
+P_T = coolPropNos('P','T',T_amb,'Q',0); %tank pressure
+h_T = coolPropNos('H','P',P_T,'Q',0); %tank enthalpy
+beta_T = 0; %quality of 0, all liquid in tank outflow
 
-%inlet conditions
-lineLoss = 10e5; %10 bar pressure loss in feed system
-
+%Coolant Loop inlet conditions
+lineLoss = 10e5; %10 bar pressure loss in feed system, ESTIMATE
 h_1 = h_T; %ideal line losses are adiabatic
 P_1 = P_T - lineLoss; %pressure at entrance to coolant loop
-T_1 = py.CoolProp.CoolProp.PropsSI('T','P',P_1,'H',h_T,'N2O');
-beta_1 = py.CoolProp.CoolProp.PropsSI('Q','P',P_1,'H',h_T,'N2O');
+T_1 = coolPropNos('T','P',P_1,'H',h_T); %K
+beta_1 = coolPropNos('Q','P',P_1,'H',h_T);
 
 %cooling segment
-h_vap_1 = coolPropNos('H','P',P_1,'Q',1)-coolPropNos('H','P',P_1,'Q',0);
-quality_limit = 0.5;
-cool_cap = (quality_limit*h_vap_1)+coolPropNos('H','P',P_1,'Q',0) - h_1;
+h_vap_1 = coolPropNos('H','P',P_1,'Q',1)-coolPropNos('H','P',P_1,'Q',0); %unit?
+quality_limit = 0.7;
+cool_cap = (quality_limit*h_vap_1)+coolPropNos('H','P',P_1,'Q',0) - h_1; %
 m_dot_cool = Q_c/cool_cap;
-
-
-
-
 
 
 
 %% Plotting 
 %------------------------------------------------
-figure
+figure %heat map
 pdeplot(model,'XYData',T_model(:,end),'Contour','on','ColorMap','hot')
 daspect([5 1 1])
 hold on
@@ -201,6 +196,50 @@ for i = 1:t_fin/t_step
     i
 end   
 end
+
+%P-H Diagram----------------------------------------
+
+n = 1000;
+T = linspace(270,309.559,n-1);
+T = [T 309.56];
+width = 18;
+height = 15;
+
+P_arr = linspace(88000,7.245e+06,n);
+for i = 1:n
+   
+    H_L(i) = py.CoolProp.CoolProp.PropsSI('H','P',P_arr(i),'Q',0,'N2O');
+    H_G(i) = py.CoolProp.CoolProp.PropsSI('H','P',P_arr(i),'Q',1,'N2O');
+    
+end
+
+m = 100;
+H_arr = linspace(0,5e5,m);
+P_arr2 = linspace(88000,7.244e+06,m);
+
+T_HP = zeros(m,m);
+
+for i =1:m
+   for j = 1:m
+    T_HP(i,j) = py.CoolProp.CoolProp.PropsSI('T','H',H_arr(j),'P',P_arr2(i),'N2O');
+   end
+end
+
+figure % P-H diagram
+plot(H_L/1e3,P_arr/1e5,'-b','LineWidth',3)
+hold on
+plot(H_G/1e3,P_arr/1e5,'-r','LineWidth',3)
+plot([h_T h_1]/1e3,[P_T P_1]/1e5,'--k')
+contour(H_arr/1e3,P_arr2/1e5,T_HP,[200 220 240 260 280 300 309.57 320 340],'-k','ShowText','on','LabelSpacing',800)
+hold off
+grid on
+box on
+axis([0,500,0,75])
+xlabel('Enthalpy [kJ/kgK]')
+ylabel('Pressure [bar]')
+legend('Saturated Liquid','Saturated Vapour','Isotherms','Cooling Loop','orientation','horizontal','Location','northoutside')
+set(gca,'FontSize',16)
+set(gcf,'units','centimeters','position',[5,5,width,height])
 
 %% Nozzle Side Heat Transfer
 function q_dot = nozzleFlux(location,state)
