@@ -6,6 +6,7 @@
 %% Setup and Options
 clear
 clc
+close all
 
 load n2o %loads nitrous virial equations data file - OBSOLETE WITH COOLPROP
 load materials
@@ -25,12 +26,14 @@ looper = 1;
 animate = 0; % option to plot animated change in temperature
 accurate_geom = 1;
 plotting_general = 1;
+edges_plot_presolve = 1;
 
 %% Material Properties
 
 %wall material properties - COPPER
 C_w = materials(4,looper); %J/kg*K %heat capacity
 k = materials(3,looper); %conduction constant
+rho_w = 
 
 %Nitrous properties
 C_nos = heatCapLiquid(n2o); %J/kg*K
@@ -54,17 +57,17 @@ P_amb = 101535;
 %axial distance, given a set of input parameters and assuming a conical
 %expansion section. Combustion properties are given by NASA tool CEAOnline
 
-nozzle.Pcc = 35e5; %combustion chamber pressure
+nozzle.Pcc = 200e5; %combustion chamber pressure
 nozzle.gamma = 1.1726; %specific heat ratio
 nozzle.Patm = 101325; %ambient (exit) pressure
-nozzle.Rcc = 0.020; %combustion chamber diameter
-nozzle.m_dot = 0.150; %kg/s, total mass flow rate
+nozzle.Rcc = 0.877; %combustion chamber diameter
+nozzle.m_dot = 84.05; %kg/s, total mass flow rate
 nozzle.m_molar = 30.53e-3; %kg/mol of reaction products
 nozzle.Tcc = 3252; %combustion chamber stagnation temperature
-nozzle.c_star = 1400; %characteristic velocity
+nozzle.c_star = 1321; %characteristic velocity
 nozzle.g = 9.81; %gravity
 
-nozzle.t_wall = 0.002; %wall thickness
+nozzle.t_wall = 0.02; %wall thickness
 
 nozzle = nozzleGeometry(nozzle); %Call nozzle geometry function to get a conical nozzle shape
 
@@ -72,6 +75,7 @@ nozzle.M_array = unique(nozzle.M_array); %variation of Mach with x
 nozzle.x_array = unique(nozzle.x_array); %array of x positions
 nozzle.A_array = unique(nozzle.A_array); %variation of area with x
 nozzle.y_array = unique(nozzle.y_array,'stable'); %variation of radius with x
+
 save nozzle 
 
 %% Geometry Definition
@@ -112,16 +116,18 @@ end
 
 geometryFromEdges(model,geom); %add geometry to model
 
-thermalProperties(model,'ThermalConductivity',k,'MassDensity',8960,'SpecificHeat',C_w); %apply thermal properties to model, in this case a copper wall
+thermalProperties(model,'ThermalConductivity',k,'MassDensity',rho_w,'SpecificHeat',C_w); %apply thermal properties to model, in this case a copper wall
 
-% % Edges plot
-% figure
-% pdegplot(model,'EdgeLabels','on') %plot geometry with labelled edge
-% axis('image')
-% hold on
-% plot(nozzle.outer_x_array,nozzle.outer_y_array,'xr')
-% plot(nozzle.x_array,nozzle.y_array,'xg')
-% hold off
+if edges_plot_presolve == 1
+    % Edges plot
+    figure
+    pdegplot(model,'EdgeLabels','on') %plot geometry with labelled edge
+    axis('image')
+    hold on
+    plot(nozzle.outer_x_array,nozzle.outer_y_array,'xr')
+    plot(nozzle.x_array,nozzle.y_array,'xg')
+    hold off
+end
 
 %set BC function handles - probably not needed, could just put handles
 %straight into BC function calls
@@ -196,12 +202,22 @@ elseif accurate_geom == 1
 end
 
 q_dot_c = zeros(1,length(q_dotx));
+
 for j = 1:length(q_dotx)
     q_dot_c(j) = norm([q_dotx(j),q_doty(j)]);
+    if isnan(q_dot_c(j))
+        if j == length(q_dotx) 
+            q_dot_c(j) = q_dot_c(j-1);
+        elseif j == 1
+            q_dot_c(j) = q_dot_c(j+1);
+        else
+            q_dot_c(j) = mean([q_dot_c(j-1) q_dot_c(j+1)]);
+        end
+    end
 end
 
 if accurate_geom == 0
-    Q_c = trapz(nozzle.x_array,((q_dot_c.*nozzle.y_array).*pi.*2)); %generates 3D (total surface) heat flux accounting for changing diameter of nozzle.
+    Q_c = trapz(nozzle.x_array,(q_dot_c.*(nozzle.y_array.*pi.*2))); %generates 3D (total surface) heat flux accounting for changing diameter of nozzle.
 elseif accurate_geom == 1
     Q_c = trapz(nozzle.outer_x_array,((q_dot_c.*nozzle.outer_y_array).*pi.*2)); %generates 3D (total surface) heat flux accounting for changing diameter of nozzle.
 end

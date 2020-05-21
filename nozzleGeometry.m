@@ -50,20 +50,23 @@ function [nozzle] = nozzleGeometry(nozzle)
         x_arr1 = linspace(x_inlet,x_radIn,n);
         x_arr2 = linspace(x_radIn,x_radOut,n);
         x_arr3 = linspace(x_radOut,x_outlet,n);
-        x_array = [x_arr1 x_arr2 x_arr3];
+        x_array = [x_arr1 x_arr2(2:end) x_arr3(2:end)];
 
-        y_con = zeros(1,3*n);
-        A_con = zeros(1,3*n);
+        y_con = zeros(1,(3*n)-2);
+        A_con = zeros(1,(3*n)-2);
 
         for i = 1:n
 
-            y_con(i) = tand(180-beta)*(x_arr1(i)-x_inlet) + Rcc;
-            y_con(i+n) = -sqrt((R^2) - (x_arr2(i)^2)) + Rt+R;
-            y_con(i+2*n) = tand(alpha)*(x_arr3(i)-x_radOut) + Rt+R*(1-cosd(alpha));
-          
+            y_con(i) = tand(180-beta)*(x_array(i)-x_inlet) + Rcc;
+            
+        end
+        
+        for i = 1:n-1
+            y_con(i+n) = -sqrt((R^2) - (x_array(i+n)^2)) + Rt+R;
+            y_con(i-1+(2*n)) = tand(alpha)*(x_array(i-1+(2*n))-x_radOut) + Rt+R*(1-cosd(alpha));
         end
 
-        for i = 1:3*n
+        for i = 1:(3*n)-2
             
             A_con(i) = pi.*y_con(i).^2;
 
@@ -78,10 +81,12 @@ function [nozzle] = nozzleGeometry(nozzle)
         end
 
     end
+    
+    % y_con breakdown: 1->n is converging, n+1->2*n-1 is radius, 2*n->3*n-2
     y_inlet = y_con(1);
     y_radIn = y_con(n);
-    y_radOut = y_con(n*2);
-    y_outlet = y_con(n*3);
+    y_radOut = y_con((n*2)-1);
+    y_outlet = y_con(end);
     
     %% Nozzle Geometry For Thermal Model
     tcb = tw*cosd(90-beta);
@@ -103,14 +108,20 @@ function [nozzle] = nozzleGeometry(nozzle)
     sf = '(rcon+rdiv) + (rrad*(ci-co))';
     
     %% Outer Surface Points array
+    tw = tw-(0.1*tw);
+    tcb = tw*cosd(90-beta);
+    tca = tw*cosd(90-alpha);
+    tsb = tw*sind(90-beta);
+    tsa = tw*sind(90-alpha);
     
     out_xarr1 = x_arr1+tcb;
     out_xarr2 = linspace(x_radIn+tcb,x_radOut-tca,n);
-    out_xarr3 = x_arr3-tca;
+    out_xarr2 = out_xarr2(2:end);
+    out_xarr3 = x_arr3(2:end)-tca;
     
     out_yarr1 = y_con(1:n)+tsb;
-    out_yarr3 = y_con(((2*n)+1):end)+tsa;
-    for i = 1:n
+    out_yarr3 = y_con((2*n):end)+tsa;
+    for i = 1:n-1
         out_yarr2(i) = -sqrt(((R-tw)^2) - (out_xarr2(i)^2)) + Rt+R;
     end
     
