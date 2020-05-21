@@ -105,18 +105,16 @@ function [nozzle] = nozzleGeometry(nozzle)
     %% Outer Surface Points array
     
     out_xarr1 = x_arr1+tcb;
-    out_xarr2 = linspace(x_radIn+tcb,x_radOut-tca,n);
+    out_xarr2 = linspace(
     out_xarr3 = x_arr3-tca;
     
-    out_yarr1 = y_con(1:n)+tsb;
-    out_yarr3 = y_con(((2*n)+1):end)+tsa;
+    
+    out_yarr1 = y_con
+    y_con(i+n) = -sqrt((R^2) - (x_arr2(i)^2)) + Rt+R;
+    
     for i = 1:n
-        out_yarr2(i) = -sqrt(((R-tw)^2) - (out_xarr2(i)^2)) + Rt+R;
+        out_yarr2(i+n) = -sqrt(((R-tw)^2) - (x_arr2(i)^2)) + Rt+R;
     end
-    
-    out_xarray = [out_xarr1 out_xarr2 out_xarr3];
-    out_yarray = [out_yarr1 out_yarr2 out_yarr3];
-    
     %% Outputs
     nozzle.geomBounds = [x_inlet, x_radIn, x_radOut, x_outlet; y_inlet, y_radIn, y_radOut, y_outlet];
     nozzle.outerGeomBounds = [x_inlet+tcb, x_radIn+tcb, x_radOut-tca, x_outlet-tca, y_inlet+tsb, y_radIn+tsb, y_radOut+tsa, y_outlet+tsa];
@@ -130,8 +128,6 @@ function [nozzle] = nozzleGeometry(nozzle)
     nozzle.Rt = Rt;
     nozzle.R = R;
     nozzle.x_array = x_array;
-    nozzle.outer_x_array = out_xarray;
-    nozzle.outer_y_array = out_yarray;
     nozzle.At = At;
     nozzle.y_array = y_con;
 end
