@@ -89,23 +89,25 @@ function [nozzle] = nozzleGeometry(nozzle)
     y_outlet = y_con(end);
     
     %% Nozzle Geometry For Thermal Model
-    tcb = tw*cosd(90-beta);
-    tca = tw*cosd(90-alpha);
-    tsb = tw*sind(90-beta);
-    tsa = tw*sind(90-alpha);
     
-    rect_con = [3 4 x_inlet+tcb x_radIn+tcb x_radIn x_inlet y_inlet+tsb y_radIn+tsb y_radIn y_inlet];
-    rect_div = [3 4  x_radOut-tca x_outlet-tca x_outlet x_radOut y_radOut+tsa y_outlet+tsa y_outlet y_radOut];
-    circ_inner = [1 0 Rt+R R 0 0 0 0 0 0];
-    circ_outer = [1 0 Rt+R R-tw 0 0 0 0 0 0];
-    rect_rad = [2 4 0 x_radOut 0 x_radIn Rt+R y_radOut 0 y_radIn];
-    
-    gd = [rect_con' rect_div' circ_inner' circ_outer' rect_rad'];
-    
-    ns = char('rcon','rdiv','ci','co','rrad');
-    ns = ns';
-    
-    sf = '(rcon+rdiv) + (rrad*(ci-co))';
+    % full nozzle
+        tcb = tw*cosd(90-beta);
+        tca = tw*cosd(90-alpha);
+        tsb = tw*sind(90-beta);
+        tsa = tw*sind(90-alpha);
+
+        rect_con = [3 4 x_inlet+tcb x_radIn+tcb x_radIn x_inlet y_inlet+tsb y_radIn+tsb y_radIn y_inlet];
+        rect_div = [3 4  x_radOut-tca x_outlet-tca x_outlet x_radOut y_radOut+tsa y_outlet+tsa y_outlet y_radOut];
+        circ_inner = [1 0 Rt+R R 0 0 0 0 0 0];
+        circ_outer = [1 0 Rt+R R-tw 0 0 0 0 0 0];
+        rect_rad = [2 4 0 x_radOut 0 x_radIn Rt+R y_radOut 0 y_radIn];
+
+        gd = [rect_con' rect_div' circ_inner' circ_outer' rect_rad'];
+
+        ns = char('rcon','rdiv','ci','co','rrad');
+        ns = ns';
+
+        sf = '(rcon+rdiv) + (rrad*(ci-co))';
     
     %% Outer Surface Points array
     tw = tw-(0.1*tw);

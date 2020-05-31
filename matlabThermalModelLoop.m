@@ -7,8 +7,10 @@
 
 load n2o %loads nitrous virial equations data file - OBSOLETE WITH COOLPROP
 load looper 
+load looper2
 load materials
 load materials_list
+load wall_thickness
 %{
     format of Materials table:
 
@@ -17,51 +19,67 @@ load materials_list
     Max Service Temp 2
     Conductivity 3 
     Heat Capacity 4 
+    Density 5
 %}
 
 animate = 0; % option to plot animated change in temperature
 accurate_geom = 1;
 plotting_general = 0;
 
+%% Environmental Conditions
+
+T_amb = 293;
+P_amb = 101325;
+%gravity
+g = 9.81;
+g_i = convvel(9.81,'m/s','ft/s');
+
 %% Material Properties
 
 %wall material properties - COPPER
 C_w = materials(4,looper); %J/kg*K %heat capacity
 k = materials(3,looper); %conduction constant
+rho_w = materials(5,looper);
 
 %Nitrous properties
-C_nos = heatCapLiquid(n2o); %J/kg*K
+C_nos = coolPropNos('C','T',T_amb,'Q',0); %J/kg*K
 molar_nos = 0.044; %kg/mol
 
+
+%% Line losses
+
+%tank conditions
+T_T = T_amb; %tank temp
+P_T = coolPropNos('P','T',T_amb,'Q',0); %tank pressure
+h_T = coolPropNos('H','P',P_T,'Q',0); %tank enthalpy
+beta_T = 0; %quality of 0, all liquid in tank outflow
+
+%Coolant Loop inlet conditions
+lineLoss = 10e5; %10 bar pressure loss in feed system, ESTIMATE
+h_1 = h_T; %ideal line losses are adiabatic
+P_1 = P_T - lineLoss; %pressure at entrance to coolant loop
+T_1 = coolPropNos('T','P',P_1,'H',h_T); %K
+beta_1 = coolPropNos('Q','P',P_1,'H',h_T);
+
 %nitrous saturation temp
-T_c = 300;
-n2o.T = T_c;
-
-%gravity
-g = 9.81;
-g_i = convvel(9.81,'m/s','ft/s');
-
-%% Environmental Conditions
-
-T_amb = 293;
-P_amb = 101535;
+T_c = coolPropNos('Tcrit','T',T_1,'P',P_1);
 
 %% Nozzle Flow Properties
 %gets variation in flow properties through a supersonic con-di nozzle with
 %axial distance, given a set of input parameters and assuming a conical
 %expansion section. Combustion properties are given by NASA tool CEAOnline
 
-nozzle.Pcc = 35e5; %combustion chamber pressure
+nozzle.Pcc = 200e5; %combustion chamber pressure
 nozzle.gamma = 1.1726; %specific heat ratio
-nozzle.Patm = 101325; %ambient (exit) pressure
-nozzle.Rcc = 0.020; %combustion chamber diameter
-nozzle.m_dot = 0.150; %kg/s, total mass flow rate
+nozzle.Patm = P_amb; %ambient (exit) pressure
+nozzle.Rcc = 1.34; %combustion chamber diameter
+nozzle.m_dot = 760.22; %kg/s, total mass flow rate
 nozzle.m_molar = 30.53e-3; %kg/mol of reaction products
 nozzle.Tcc = 3252; %combustion chamber stagnation temperature
-nozzle.c_star = 1400; %characteristic velocity
+nozzle.c_star = 1321; %characteristic velocity
 nozzle.g = 9.81; %gravity
 
-nozzle.t_wall = 0.002; %wall thickness
+nozzle.t_wall = wall_thickness(looper2); %wall thickness
 
 nozzle = nozzleGeometry(nozzle); %Call nozzle geometry function to get a conical nozzle shape
 
@@ -109,7 +127,19 @@ end
 
 geometryFromEdges(model,geom); %add geometry to model
 
-thermalProperties(model,'ThermalConductivity',k,'MassDensity',8960,'SpecificHeat',C_w); %apply thermal properties to model, in this case a copper wall
+thermalProperties(model,'ThermalConductivity',k,'MassDensity',rho_w,'SpecificHeat',C_w); %apply thermal properties to model, in this case a copper wall
+
+%if edges_plot_presolve == 1
+    % Edges plot
+%     figure
+%     pdegplot(model,'EdgeLabels','on') %plot geometry with labelled edge
+%     axis('image')
+%     hold on
+%     plot(nozzle.outer_x_array,nozzle.outer_y_array,'xr')
+%     plot(nozzle.x_array,nozzle.y_array,'xg')
+%     hold off
+%end
+
 
 %set BC function handles - probably not needed, could just put handles
 %straight into BC function calls
@@ -177,35 +207,39 @@ T_model = results.Temperature; %extract temperature data
 % position (x) however CoolProp uses Q for quality. Beta is often used for
 % VOLUMETRIC flow quality instead.
 
+%Get heat flux results along the cooled surface in x and y
 if accurate_geom == 0
     [q_dotx, q_doty] = evaluateHeatFlux(results,nozzle.x_array,ones(1,length(nozzle.x_array))*(geom_w/2),tlist(end)); %Gets 2D heat flux on coolant surface at steady state
 elseif accurate_geom == 1
     [q_dotx, q_doty] = evaluateHeatFlux(results,nozzle.outer_x_array,nozzle.outer_y_array,tlist(end));
 end
 
+%pre-allocate net heat flux array
 q_dot_c = zeros(1,length(q_dotx));
+
 for j = 1:length(q_dotx)
-    q_dot_c(j) = norm([q_dotx(j),q_doty(j)]);
+    q_dot_c(j) = norm([q_dotx(j),q_doty(j)]); %get magnitude of heat flux
+    
+    if isnan(q_dot_c(j)) %checks for NAN in the array and sets as average of either side, will break if two nan's in a row
+        if j == length(q_dotx) 
+            q_dot_c(j) = q_dot_c(j-1);
+        elseif j == 1
+            q_dot_c(j) = q_dot_c(j+1);
+        else
+            q_dot_c(j) = mean([q_dot_c(j-1) q_dot_c(j+1)]);
+        end
+    end
+    
 end
 
+%multiplies 2D heat flux by local nozzle circumference (assuming
+%axisymmetric conditions) and integrates to get total heat rate across
+%nozzle wall
 if accurate_geom == 0
     Q_c = trapz(nozzle.x_array,((q_dot_c.*nozzle.y_array).*pi.*2)); %generates 3D (total surface) heat flux accounting for changing diameter of nozzle.
 elseif accurate_geom == 1
     Q_c = trapz(nozzle.outer_x_array,((q_dot_c.*nozzle.outer_y_array).*pi.*2)); %generates 3D (total surface) heat flux accounting for changing diameter of nozzle.
 end
-
-%tank conditions
-T_T = T_amb; %tank temp
-P_T = coolPropNos('P','T',T_amb,'Q',0); %tank pressure
-h_T = coolPropNos('H','P',P_T,'Q',0); %tank enthalpy
-beta_T = 0; %quality of 0, all liquid in tank outflow
-
-%Coolant Loop inlet conditions
-lineLoss = 10e5; %10 bar pressure loss in feed system, ESTIMATE
-h_1 = h_T; %ideal line losses are adiabatic
-P_1 = P_T - lineLoss; %pressure at entrance to coolant loop
-T_1 = coolPropNos('T','P',P_1,'H',h_T); %K
-beta_1 = coolPropNos('Q','P',P_1,'H',h_T);
 
 %cooling segment
 h_vap_1 = coolPropNos('H','P',P_1,'Q',1)-coolPropNos('H','P',P_1,'Q',0); %unit?
@@ -215,8 +249,6 @@ m_dot_cool = Q_c/cool_cap;
 
 P_2 = P_1; %isobaric heat addition - IDEALISATION
 h_2 = coolPropNos('H','P',P_2,'Q',quality_limit);
-
-
 
 %% Plotting 
 %------------------------------------------------
@@ -328,9 +360,9 @@ load max_temp_results
 
 max_temp = max(results.Temperature(:,end));
 
-m_dot_results(looper) = m_dot_cool;
-max_temp_results(looper) = max_temp;
-q_dot_results(looper) = max(q_dot_c);
+m_dot_results(looper,looper2) = m_dot_cool;
+max_temp_results(looper,looper2) = max_temp;
+q_dot_results(looper,looper2) = max(q_dot_c);
 
 save('m_dot_results.mat','m_dot_results')
 save('q_dot_results.mat','q_dot_results')

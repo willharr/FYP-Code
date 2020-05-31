@@ -21,6 +21,7 @@ looper = 1;
     Max Service Temp 2
     Conductivity 3 
     Heat Capacity 4 
+    Density 5
 %}
 
 animate = 0; % option to plot animated change in temperature
@@ -28,46 +29,59 @@ accurate_geom = 1;
 plotting_general = 1;
 edges_plot_presolve = 1;
 
+%% Environmental Conditions
+
+T_amb = 293;
+P_amb = 101535;
+%gravity
+g = 9.81;
+g_i = convvel(9.81,'m/s','ft/s');
+
 %% Material Properties
 
 %wall material properties - COPPER
 C_w = materials(4,looper); %J/kg*K %heat capacity
 k = materials(3,looper); %conduction constant
-rho_w = 
+rho_w = materials(5,looper);
 
 %Nitrous properties
-C_nos = heatCapLiquid(n2o); %J/kg*K
+C_nos = coolPropNos('C','T',T_amb,'Q',0); %J/kg*K
 molar_nos = 0.044; %kg/mol
 
+%% Line losses
+
+%tank conditions
+T_T = T_amb; %tank temp
+P_T = coolPropNos('P','T',T_amb,'Q',0); %tank pressure
+h_T = coolPropNos('H','P',P_T,'Q',0); %tank enthalpy
+beta_T = 0; %quality of 0, all liquid in tank outflow
+
+%Coolant Loop inlet conditions
+lineLoss = 10e5; %10 bar pressure loss in feed system, ESTIMATE
+h_1 = h_T; %ideal line losses are adiabatic
+P_1 = P_T - lineLoss; %pressure at entrance to coolant loop
+T_1 = coolPropNos('T','P',P_1,'H',h_T); %K
+beta_1 = coolPropNos('Q','P',P_1,'H',h_T);
+
 %nitrous saturation temp
-T_c = 300;
-n2o.T = T_c;
-
-%gravity
-g = 9.81;
-g_i = convvel(9.81,'m/s','ft/s');
-
-%% Environmental Conditions
-
-T_amb = 293;
-P_amb = 101535;
+T_c = coolPropNos('Tcrit','T',T_1,'P',P_1);
 
 %% Nozzle Flow Properties
 %gets variation in flow properties through a supersonic con-di nozzle with
 %axial distance, given a set of input parameters and assuming a conical
 %expansion section. Combustion properties are given by NASA tool CEAOnline
 
-nozzle.Pcc = 200e5; %combustion chamber pressure
+nozzle.Pcc = 35e5; %combustion chamber pressure
 nozzle.gamma = 1.1726; %specific heat ratio
 nozzle.Patm = 101325; %ambient (exit) pressure
-nozzle.Rcc = 0.877; %combustion chamber diameter
-nozzle.m_dot = 84.05; %kg/s, total mass flow rate
+nozzle.Rcc = 0.276; %combustion chamber diameter
+nozzle.m_dot = 8; %kg/s, total mass flow rate
 nozzle.m_molar = 30.53e-3; %kg/mol of reaction products
 nozzle.Tcc = 3252; %combustion chamber stagnation temperature
 nozzle.c_star = 1321; %characteristic velocity
 nozzle.g = 9.81; %gravity
 
-nozzle.t_wall = 0.02; %wall thickness
+nozzle.t_wall = 0.01; %wall thickness
 
 nozzle = nozzleGeometry(nozzle); %Call nozzle geometry function to get a conical nozzle shape
 
@@ -195,16 +209,18 @@ T_model = results.Temperature; %extract temperature data
 % position (x) however CoolProp uses Q for quality. Beta is often used for
 % VOLUMETRIC flow quality instead.
 
+%Get heat flux results along the cooled surface in x and y
 if accurate_geom == 0
     [q_dotx, q_doty] = evaluateHeatFlux(results,nozzle.x_array,ones(1,length(nozzle.x_array))*(geom_w/2),tlist(end)); %Gets 2D heat flux on coolant surface at steady state
 elseif accurate_geom == 1
     [q_dotx, q_doty] = evaluateHeatFlux(results,nozzle.outer_x_array,nozzle.outer_y_array,tlist(end));
 end
 
+%pre-allocate net heat flux array
 q_dot_c = zeros(1,length(q_dotx));
 
 for j = 1:length(q_dotx)
-    q_dot_c(j) = norm([q_dotx(j),q_doty(j)]);
+    q_dot_c(j) = norm([q_dotx(j),q_doty(j)]); %checks for NAN in the array and sets as average of either side, will break if two nan's in a row
     if isnan(q_dot_c(j))
         if j == length(q_dotx) 
             q_dot_c(j) = q_dot_c(j-1);
@@ -216,24 +232,14 @@ for j = 1:length(q_dotx)
     end
 end
 
+%multiplies 2D heat flux by local nozzle circumference (assuming
+%axisymmetric conditions) and integrates to get total heat rate across
+%nozzle wall
 if accurate_geom == 0
     Q_c = trapz(nozzle.x_array,(q_dot_c.*(nozzle.y_array.*pi.*2))); %generates 3D (total surface) heat flux accounting for changing diameter of nozzle.
 elseif accurate_geom == 1
     Q_c = trapz(nozzle.outer_x_array,((q_dot_c.*nozzle.outer_y_array).*pi.*2)); %generates 3D (total surface) heat flux accounting for changing diameter of nozzle.
 end
-
-%tank conditions
-T_T = T_amb; %tank temp
-P_T = coolPropNos('P','T',T_amb,'Q',0); %tank pressure
-h_T = coolPropNos('H','P',P_T,'Q',0); %tank enthalpy
-beta_T = 0; %quality of 0, all liquid in tank outflow
-
-%Coolant Loop inlet conditions
-lineLoss = 10e5; %10 bar pressure loss in feed system, ESTIMATE
-h_1 = h_T; %ideal line losses are adiabatic
-P_1 = P_T - lineLoss; %pressure at entrance to coolant loop
-T_1 = coolPropNos('T','P',P_1,'H',h_T); %K
-beta_1 = coolPropNos('Q','P',P_1,'H',h_T);
 
 %cooling segment
 h_vap_1 = coolPropNos('H','P',P_1,'Q',1)-coolPropNos('H','P',P_1,'Q',0); %unit?
@@ -243,7 +249,6 @@ m_dot_cool = Q_c/cool_cap;
 
 P_2 = P_1; %isobaric heat addition - IDEALISATION
 h_2 = coolPropNos('H','P',P_2,'Q',quality_limit);
-
 
 %% Plotting 
 %------------------------------------------------
@@ -348,6 +353,8 @@ if plotting_general == 1
 
 end
 
+
+
 %% Nozzle Side Heat Transfer
 function q_dot = nozzleFlux(location,state)
     %% Description
@@ -422,16 +429,14 @@ function q_dot = coolantFlux(~,state)
 %{
     This coolant side heat flux script uses and equation from Huzel and
     Huang to determine the heat flux to a coolant fluid when the coolant is
-    supercritical. 
+    SUPERCRITICAL.
 %}
 
 T_aw_c = 300; %K, adiabatic wall temp for relatively low speed flow
 T_c = 300; % coolant temperature
 T_c_i = convtemp(300,'K','R');
 
-C_nos = 72; %J/mol*K - Specific heat capacity of coolant, nitrous oxide in this case
-molar_nos = 0.044; %kg/mol - molar mass of nitrous oxide
-C_nos = C_nos/0.044; %J/kg*K - convert to per-mass value
+C_nos = coolPropNos('C','T',T_c,'Q',0); %J/kg*K
 Cp_nos_i = C_nos/4192.11; %BTU/lbm*R
 k_nos = 0.0915; % Thermal conductivity of nitrous
 
