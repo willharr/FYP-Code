@@ -12,7 +12,7 @@ load n2o %loads nitrous virial equations data file - OBSOLETE WITH COOLPROP
 load materials
 load materials_list
 
-looper = 1;
+looper = 4;
 %{
     format of Materials table:
 
@@ -23,11 +23,14 @@ looper = 1;
     Heat Capacity 4 
     Density 5
 %}
-
+cooled_sections = 2;
 animate = 0; % option to plot animated change in temperature
 accurate_geom = 1;
 plotting_general = 1;
 edges_plot_presolve = 1;
+
+fontsize =10;
+fonttype = 'Times New Roman';
 
 %% Environmental Conditions
 
@@ -57,7 +60,7 @@ h_T = coolPropNos('H','P',P_T,'Q',0); %tank enthalpy
 beta_T = 0; %quality of 0, all liquid in tank outflow
 
 %Coolant Loop inlet conditions
-lineLoss = 10e5; %10 bar pressure loss in feed system, ESTIMATE
+lineLoss = 20e5; %10 bar pressure loss in feed system, ESTIMATE
 h_1 = h_T; %ideal line losses are adiabatic
 P_1 = P_T - lineLoss; %pressure at entrance to coolant loop
 T_1 = coolPropNos('T','P',P_1,'H',h_T); %K
@@ -74,14 +77,15 @@ T_c = coolPropNos('Tcrit','T',T_1,'P',P_1);
 nozzle.Pcc = 35e5; %combustion chamber pressure
 nozzle.gamma = 1.1726; %specific heat ratio
 nozzle.Patm = 101325; %ambient (exit) pressure
-nozzle.Rcc = 0.276; %combustion chamber diameter
-nozzle.m_dot = 8; %kg/s, total mass flow rate
+nozzle.Rcc = 0.02; %combustion chamber diameter
+nozzle.m_dot = 0.15; %kg/s, total mass flow rate
 nozzle.m_molar = 30.53e-3; %kg/mol of reaction products
 nozzle.Tcc = 3252; %combustion chamber stagnation temperature
 nozzle.c_star = 1321; %characteristic velocity
 nozzle.g = 9.81; %gravity
+nozzle.cooled_sections = cooled_sections; %specifies which sections of the nozzle are to be cooled (see above)
 
-nozzle.t_wall = 0.01; %wall thickness
+nozzle.t_wall = 0.0035; %wall thickness
 
 nozzle = nozzleGeometry(nozzle); %Call nozzle geometry function to get a conical nozzle shape
 
@@ -243,7 +247,7 @@ end
 
 %cooling segment
 h_vap_1 = coolPropNos('H','P',P_1,'Q',1)-coolPropNos('H','P',P_1,'Q',0); %unit?
-quality_limit = 0.7;
+quality_limit = 0.5;
 cool_cap = (quality_limit*h_vap_1)+coolPropNos('H','P',P_1,'Q',0) - h_1; %
 m_dot_cool = Q_c/cool_cap;
 
@@ -256,37 +260,45 @@ if plotting_general == 1
     
     %Edges plot
     figure
+    %plot(nozzle.outer_x_array,nozzle.outer_y_array,'xr')
+    %hold on
+    %plot(nozzle.x_array,nozzle.y_array,'xg')
     pdegplot(model,'EdgeLabels','on') %plot geometry with labelled edge
     axis('image')
-    hold on
-    plot(nozzle.outer_x_array,nozzle.outer_y_array,'xr')
-    plot(nozzle.x_array,nozzle.y_array,'xg')
-    hold off
+   % hold off
+    xlabel('Axial Distance from Throat [m]')
+    ylabel('Radial Distance from Centerline [m]')
+    set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
+    grid on 
+    box on
+    set(gcf,'units','centimeters','position',[5,5,12,10])
     
     %Results Heat Map
     figure 
     pdeplot(model,'XYData',T_model(:,end),'Contour','on','ColorMap','hot')
-    daspect([5 1 1])
+    %daspect([5 1 1])
     hold on
-    plot(nozzle.x_array,(nozzle.y_array/10)-3e-3,'k',[nozzle.x_array(1) nozzle.x_array(end)],[-3e-3 -3e-3],'-.b')
+    plot(nozzle.x_array,(nozzle.y_array)-3e-3,'k',[nozzle.x_array(1) nozzle.x_array(end)],[-3e-3 -3e-3],'-.b')
     xlabel('Axial Position from Throat [m]')
     ylabel('Radial Position from Centerline [m]')
     axis('tight')
-    set(gca,'FontSize',14)
+    set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
     grid on
     box on
-
+    set(gcf,'units','centimeters','position',[5,5,12,10])
+    
     figure %convergence check
     hold on 
-    plot(T_model(floor(n_mesh/2),:),'b');
-    plot(T_model(floor(n_mesh/4),:),'r');
-    plot(T_model(floor((3*n_mesh)/4),:),'k');
+    for i = 1:5:length(T_model(:,1))
+        plot(T_model(i,:));
+    end
     hold off
     grid on
     box on
     xlabel('Time [ms]')
     ylabel('Temperature')
-    set(gca,'FontSize',14)
+    set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
+    set(gcf,'units','centimeters','position',[5,5,12,10])
 
     %results plot 
     [qx,qy] = evaluateHeatFlux(results);
@@ -295,10 +307,22 @@ if plotting_general == 1
                          'Contour','on',...
                          'FlowData',[qx(:,end),qy(:,end)], ...
                          'ColorMap','hot')
-
+    annotation('textarrow',[0.3 0.4],[0.35 0.35],'String','Flow Direction','FontSize',fontsize,'FontName',fonttype)
+    hold on
+    plot([nozzle.x_array(1) nozzle.x_array(end)],[0 0],'-.k')
+    hold off
+    xlabel('Axial Distance from Throat [m]')
+    ylabel('Radial Distance from Centerline [m]')
+    grid on
+    box on
+    set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
+    title(colorbar,'Temperature [K]','FontSize',fontsize);
+    set(gcf,'units','centimeters','position',[5,5,14,10])   
+    saveas(gcf,'E1heatmapResult','epsc')
+                     
     if animate == 1
     for i = 1:t_fin/t_step
-        figure(3)
+        figure
         pdeplot(model,'XYData',T_model(:,i),'Contour','on',...
                              'FlowData',[qx_history(:,end),qy_history(:,end)],'ColorMap','hot')
         pause(0.05)
@@ -338,19 +362,19 @@ if plotting_general == 1
     plot(H_L/1e3,P_arr/1e5,'-b','LineWidth',3)
     hold on
     plot(H_G/1e3,P_arr/1e5,'-r','LineWidth',3)
-    plot([h_T h_1]/1e3,[P_T P_1]/1e5,'--k')
-    plot([h_1 h_2]/1e3,[P_1 P_2]/1e5,'--k')
+    plot([h_T h_1]/1e3,[P_T P_1]/1e5,'--kv','MarkerIndices',2)
     contour(H_arr/1e3,P_arr2/1e5,T_HP,[200 220 240 260 280 300 309.57 320 340],'-k','ShowText','on','LabelSpacing',800)
+    plot([h_1 h_2]/1e3,[P_1 P_2]/1e5,'--k>','MarkerIndices',2)
     hold off
     grid on
     box on
     axis([0,500,0,75])
     xlabel('Enthalpy [kJ/kgK]')
     ylabel('Pressure [bar]')
-    legend('Saturated Liquid','Saturated Vapour','Isotherms','Cooling Loop','orientation','horizontal','Location','northoutside')
-    set(gca,'FontSize',16)
+    legend('Saturated Liquid','Saturated Vapour','Cooling Loop','Isotherms','orientation','horizontal','Location','northoutside')
+    set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
     set(gcf,'units','centimeters','position',[5,5,width,height])
-
+   
 end
 
 
@@ -374,7 +398,7 @@ function q_dot = nozzleFlux(location,state)
     % main script and loaded here. 
     
     load nozzle.mat
-
+    
     g_i = convvel(nozzle.g,'m/s','ft/s'); %gravity
     
     %% Nozzle and hot-side gas properties
@@ -416,7 +440,7 @@ function q_dot = nozzleFlux(location,state)
     
     %% Convert to metric
     h_g = h_g_i*2.941e6; %convert heat transfer coeff to SI from BTU/in^2*s*F CHECK
-    
+   
     %% Calculate heat flux
     q_dot = h_g*(T_aw_n-state.u);
     

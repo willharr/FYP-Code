@@ -27,23 +27,9 @@ save('looper2.mat','looper2')
 
 load materials_list %get list of material names
 wall_thickness = [
-0.05
-0.055
-0.06
-0.065
-0.07
-0.075
-0.08
-0.085
-0.09
-0.095
-0.1
-0.105
-0.11
-0.115
-0.12
-0.125
-0.13
+0.002
+0.003
+0.004
 ];
 
 save('wall_thickness.mat','wall_thickness')
@@ -66,7 +52,7 @@ save('max_temp_results.mat','max_temp_results')
 
 for counter = 1:loops %materials loop
     
-    for counter2 = 1:loops2
+    for counter2 = 1:loops2 %wall thickness loop
     tic 
     save('loopVariables.mat','counter','counter2','loops2','loops','materials_list')
     save('looper.mat','looper')
@@ -92,10 +78,14 @@ for counter = 1:loops %materials loop
     looper = looper+1;
 end
 
-m_dot_results = m_dot_results';
-q_dot_results = q_dot_results';
-max_temp_results = max_temp_results';
+m_dot_resultsR3E1 = m_dot_results';
+q_dot_resultsR3E1 = q_dot_results';
+max_temp_resultsR3E1 = max_temp_results';
 
-save('\Results\Run2\q_dot_resultsR2E1.mat','q_dot_results')
-save('\Results\Run2\m_dot_resultsR2E1.mat','m_dot_results')
-save('\Results\Run2\max_temp_resultsR2E1.mat','max_temp_results')
+save('C:\Users\Will\New folder\FYP Code\Results\Run 3\q_dot_resultsR3E1.mat','q_dot_resultsR3E1')
+save('C:\Users\Will\New folder\FYP Code\Results\Run 3\m_dot_resultsR3E1.mat','m_dot_resultsR3E1')
+save('C:\Users\Will\New folder\FYP Code\Results\Run 3\max_temp_resultsR3E1.mat','max_temp_resultsR3E1')
+
+beep
+pause(5)
+beep

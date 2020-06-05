@@ -25,6 +25,13 @@ load wall_thickness
 animate = 0; % option to plot animated change in temperature
 accurate_geom = 1;
 plotting_general = 0;
+%{
+    Cooled Sections
+        0 : full nozzle cooled
+        1 : throat and diverging
+        2 : throat only
+%}
+cooled_sections = 2;
 
 %% Environmental Conditions
 
@@ -69,15 +76,16 @@ T_c = coolPropNos('Tcrit','T',T_1,'P',P_1);
 %axial distance, given a set of input parameters and assuming a conical
 %expansion section. Combustion properties are given by NASA tool CEAOnline
 
-nozzle.Pcc = 200e5; %combustion chamber pressure
+nozzle.Pcc = 35e5; %combustion chamber pressure
 nozzle.gamma = 1.1726; %specific heat ratio
 nozzle.Patm = P_amb; %ambient (exit) pressure
-nozzle.Rcc = 1.34; %combustion chamber diameter
-nozzle.m_dot = 760.22; %kg/s, total mass flow rate
+nozzle.Rcc = 0.02; %combustion chamber diameter
+nozzle.m_dot = 0.15; %kg/s, total mass flow rate
 nozzle.m_molar = 30.53e-3; %kg/mol of reaction products
 nozzle.Tcc = 3252; %combustion chamber stagnation temperature
 nozzle.c_star = 1321; %characteristic velocity
 nozzle.g = 9.81; %gravity
+nozzle.cooled_sections = cooled_sections; %specifies which sections of the nozzle are to be cooled (see above)
 
 nozzle.t_wall = wall_thickness(looper2); %wall thickness
 

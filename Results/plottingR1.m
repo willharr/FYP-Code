@@ -12,6 +12,7 @@ load m_dot_resultsR1E1.mat
 load q_dot_resultsR1E1.mat
 load max_temp_resultsR1E1.mat
 load materials.mat
+load colours.mat
 
 t_wall_1 = [
 0.002
@@ -19,8 +20,7 @@ t_wall_1 = [
 0.004];
 
 %% Material Comparison
-n = 6;
-colours = linspecer(n);
+
 
 %Combined temperature and mass flow rate plot E2
 figure
@@ -153,3 +153,4 @@ legend('Engine 1','Engine 2','Engine 3','Engine 4','Engine 5','Location','best')
 set(gca,'FontSize',14,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on')
 xlabel('Wall Thickness [m]')
 %saveas(gcf,'.eps','epsc');
+

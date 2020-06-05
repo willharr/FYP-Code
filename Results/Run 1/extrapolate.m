@@ -29,30 +29,30 @@ t_wall_5 = 0.05:0.005:0.13;
 
 for i = 1:7
     
-    T_ext2 = interp1(t_wall_2,max_temp_resultsR1E2(i,:),(0.001:0.001:0.005),'linear','extrap');
-    T_ext3 = interp1(t_wall_3,max_temp_resultsR1E3(i,:),(0.001:0.001:0.005),'linear','extrap');
-    T_ext4 = interp1(t_wall_4,max_temp_resultsR1E4(i,:),(0.001:0.001:0.011),'linear','extrap');
-    T_ext5 = interp1(t_wall_5,max_temp_resultsR1E5(i,:),(0.001:0.002:0.045),'linear','extrap');
+    T_ext2 = interp1(t_wall_2,max_temp_resultsR1E2(i,:),(0.001:0.001:0.005),'spline','extrap');
+    T_ext3 = interp1(t_wall_3,max_temp_resultsR1E3(i,:),(0.001:0.001:0.005),'spline','extrap');
+    T_ext4 = interp1(t_wall_4,max_temp_resultsR1E4(i,:),(0.001:0.001:0.011),'spline','extrap');
+    T_ext5 = interp1(t_wall_5,max_temp_resultsR1E5(i,:),(0.001:0.002:0.045),'spline','extrap');
     
     max_temp_resultsR1E2ext(i,:) = [T_ext2 max_temp_resultsR1E2(i,:)]; 
     max_temp_resultsR1E3ext(i,:) = [T_ext3 max_temp_resultsR1E3(i,:)]; 
     max_temp_resultsR1E4ext(i,:) = [T_ext4 max_temp_resultsR1E4(i,:)]; 
     max_temp_resultsR1E5ext(i,:) = [T_ext5 max_temp_resultsR1E5(i,:)]; 
     
-    M_ext2 = interp1(t_wall_2,m_dot_resultsR1E2(i,:),(0.001:0.001:0.005),'linear','extrap');
-    M_ext3 = interp1(t_wall_3,m_dot_resultsR1E3(i,:),(0.001:0.001:0.005),'linear','extrap');
-    M_ext4 = interp1(t_wall_4,m_dot_resultsR1E4(i,:),(0.001:0.001:0.011),'linear','extrap');
-    M_ext5 = interp1(t_wall_5,m_dot_resultsR1E5(i,:),(0.001:0.002:0.045),'linear','extrap');
+    M_ext2 = interp1(t_wall_2,m_dot_resultsR1E2(i,:),(0.001:0.001:0.005),'spline','extrap');
+    M_ext3 = interp1(t_wall_3,m_dot_resultsR1E3(i,:),(0.001:0.001:0.005),'spline','extrap');
+    M_ext4 = interp1(t_wall_4,m_dot_resultsR1E4(i,:),(0.001:0.001:0.011),'spline','extrap');
+    M_ext5 = interp1(t_wall_5,m_dot_resultsR1E5(i,:),(0.001:0.002:0.045),'spline','extrap');
     
     m_dot_resultsR1E2ext(i,:) = [M_ext2 m_dot_resultsR1E2(i,:)]; 
     m_dot_resultsR1E3ext(i,:) = [M_ext3 m_dot_resultsR1E3(i,:)]; 
     m_dot_resultsR1E4ext(i,:) = [M_ext4 m_dot_resultsR1E4(i,:)]; 
     m_dot_resultsR1E5ext(i,:) = [M_ext5 m_dot_resultsR1E5(i,:)]; 
     
-    Q_ext2 = interp1(t_wall_2,q_dot_resultsR1E2(i,:),(0.001:0.001:0.005),'linear','extrap');
-    Q_ext3 = interp1(t_wall_3,q_dot_resultsR1E3(i,:),(0.001:0.001:0.005),'linear','extrap');
-    Q_ext4 = interp1(t_wall_4,q_dot_resultsR1E4(i,:),(0.001:0.001:0.011),'linear','extrap');
-    Q_ext5 = interp1(t_wall_5,q_dot_resultsR1E5(i,:),(0.001:0.002:0.045),'linear','extrap');
+    Q_ext2 = interp1(t_wall_2,q_dot_resultsR1E2(i,:),(0.001:0.001:0.005),'spline','extrap');
+    Q_ext3 = interp1(t_wall_3,q_dot_resultsR1E3(i,:),(0.001:0.001:0.005),'spline','extrap');
+    Q_ext4 = interp1(t_wall_4,q_dot_resultsR1E4(i,:),(0.001:0.001:0.011),'spline','extrap');
+    Q_ext5 = interp1(t_wall_5,q_dot_resultsR1E5(i,:),(0.001:0.002:0.045),'spline','extrap');
     
     q_dot_resultsR1E2ext(i,:) = [Q_ext2 q_dot_resultsR1E2(i,:)]; 
     q_dot_resultsR1E3ext(i,:) = [Q_ext3 q_dot_resultsR1E3(i,:)]; 

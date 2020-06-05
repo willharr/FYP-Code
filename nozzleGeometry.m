@@ -17,6 +17,7 @@ function [nozzle] = nozzleGeometry(nozzle)
     c_star = nozzle.c_star;
     g = nozzle.g;
     tw = nozzle.t_wall;
+    cooled_sections = nozzle.cooled_sections;
 
     %% General Properties
 
@@ -127,8 +128,16 @@ function [nozzle] = nozzleGeometry(nozzle)
         out_yarr2(i) = -sqrt(((R-tw)^2) - (out_xarr2(i)^2)) + Rt+R;
     end
     
-    out_xarray = [out_xarr1 out_xarr2 out_xarr3];
-    out_yarray = [out_yarr1 out_yarr2 out_yarr3];
+    if cooled_sections == 0
+        out_xarray = [out_xarr1 out_xarr2 out_xarr3];
+        out_yarray = [out_yarr1 out_yarr2 out_yarr3];
+    elseif cooled_sections == 1
+        out_xarray = [out_xarr2 out_xarr3];
+        out_yarray = [out_yarr2 out_yarr3];
+    elseif cooled_sections == 2
+        out_xarray = out_xarr2;
+        out_yarray = out_yarr2;
+    end
     
     %% Outputs
     nozzle.geomBounds = [x_inlet, x_radIn, x_radOut, x_outlet; y_inlet, y_radIn, y_radOut, y_outlet];
