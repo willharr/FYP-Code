@@ -16,8 +16,8 @@ load colours.mat
 
 fontsize = 10;
 fonttype = 'Times New Roman';
-width = 9;
-height = 9;
+width = 15;
+height = 15;
 
 t_wall_1 = [
 0.002
@@ -53,7 +53,7 @@ set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','o
 xlabel('Wall Thickness [m]')
 ylabel('Coolant Mass Flow Rate [kg/s]')
 set(gcf,'units','centimeters','position',[5,5,width,height])
-saveas(gcf,'R1_twoaxis','epsc')
+saveas(gcf,'R1_twoaxis','png')
 
 
 %==========================================================================
@@ -85,7 +85,7 @@ xlabel('Wall Thickness [m]')
 ylabel('Coolant Mass Flow Rate [kg/s]')
 axis([0 0.035 0 100])
 set(gcf,'units','centimeters','position',[5,5,width,height])
-saveas(gcf,'R1E2mdotvstwall','epsc')
+saveas(gcf,'R1E2mdotvstwall','png')
 
 % Just mass flow rate E3
 figure
@@ -114,7 +114,7 @@ xlabel('Wall Thickness [m]')
 ylabel('Coolant Mass Flow Rate [kg/s]')
 axis([0 0.052 0 200])
 set(gcf,'units','centimeters','position',[5,5,width,height])
-saveas(gcf,'R1E3mdotvstwall','epsc')
+saveas(gcf,'R1E3mdotvstwall','png')
 
 %===========================================================================
 
@@ -128,6 +128,9 @@ plot(t_ext_2(6:end),max_temp_resultsR1E2ext(5,6:end),'-','Color',colours(4,:))
 plot(t_ext_2(6:end),max_temp_resultsR1E2ext(6,6:end),'-','Color',colours(5,:))
 plot(t_ext_2(6:end),max_temp_resultsR1E2ext(7,6:end),'-','Color',colours(6,:))
 %===========================
+plot(0.05,0,'xk')
+plot(0.05,0,'dk')
+%=======
 plot(t_ext_2(1:6),max_temp_resultsR1E2ext(2,1:6),'--','Color',colours(1,:))
 plot(t_ext_2(1:6),max_temp_resultsR1E2ext(3,1:6),'--','Color',colours(2,:))
 plot(t_ext_2(1:6),max_temp_resultsR1E2ext(4,1:6),'--','Color',colours(3,:))
@@ -135,25 +138,28 @@ plot(t_ext_2(1:6),max_temp_resultsR1E2ext(5,1:6),'--','Color',colours(4,:))
 plot(t_ext_2(1:6),max_temp_resultsR1E2ext(6,1:6),'--','Color',colours(5,:))
 plot(t_ext_2(1:6),max_temp_resultsR1E2ext(7,1:6),'--','Color',colours(6,:))
 %===========================
-plot(0.01,materials(2,2),'x','Color',colours(2,:));
-plot(0.01,materials(2,3),'x','Color',colours(3,:));
-plot(0.01,materials(2,4),'x','Color',colours(4,:));
-plot(0.01,materials(2,5),'x','Color',colours(5,:));
-plot(0.01,materials(2,6),'x','Color',colours(6,:));
-plot(0.01,materials(1,2),'d','Color',colours(2,:));
-plot(0.01,materials(1,3),'d','Color',colours(3,:));
-plot(0.01,materials(1,4),'d','Color',colours(4,:));
-plot(0.01,materials(1,5),'d','Color',colours(5,:));
-plot(0.01,materials(1,6),'d','Color',colours(6,:));
+plot(0.032,materials(2,1),'x','Color',colours(1,:));
+plot(0.032,materials(1,1),'d','Color',colours(1,:));
+plot(0.034,materials(2,2),'x','Color',colours(2,:));
+plot(0.034,materials(1,2),'d','Color',colours(2,:));
+plot(0.003,materials(2,3),'x','Color',colours(3,:));
+plot(0.003,materials(1,3),'d','Color',colours(3,:));
+plot(0.008,materials(2,4),'x','Color',colours(4,:));
+plot(0.008,materials(1,4),'d','Color',colours(4,:));
+plot(0.006,materials(2,5),'x','Color',colours(5,:));
+plot(0.006,materials(1,5),'d','Color',colours(5,:));
+plot(0.002,materials(2,6),'x','Color',colours(6,:));
+plot(0.002,materials(1,6),'d','Color',colours(6,:));
 ylabel('Hot Side Wall Temperature [K]')
 hold off
 grid on
 box on
-legend('Inconel 625','\beta Ti','Al 6063','Cu-Zr Alloy','Be I250','Al 7068','Location','southoutside','Numcolumns',2)
+legend('Inconel 625','\beta Ti','Al 6063','Cu-Zr Alloy','Be I250','Al 7068','Max Service Temp','Melting Temp','Location','southoutside','Numcolumns',2)
 set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
 xlabel('Wall Thickness [m]')
+axis([0 0.035 0 3200])
 set(gcf,'units','centimeters','position',[5,5,width,height])
-saveas(gcf,'R1E2tempvstwallmaterials','epsc')
+saveas(gcf,'R1E2tempvstwallmaterials','png')
 
 
 %% Engine Size
@@ -166,6 +172,9 @@ plot(t_ext_2(6:end),max_temp_resultsR1E2ext(6,6:end),'-','Color',colours(2,:))
 plot(t_ext_3(6:end),max_temp_resultsR1E3ext(6,6:end),'-','Color',colours(3,:))
 plot(t_ext_4(12:end),max_temp_resultsR1E4ext(6,12:end),'-','Color',colours(4,:))
 plot(t_ext_5(24:end),max_temp_resultsR1E5ext(6,24:end),'-','Color',colours(5,:))
+%==================
+plot([0 0.08],[materials(2,5) materials(2,5)],'-.k');
+plot([0 0.08],[materials(1,5) materials(1,5)],':k');
 %===================
 plot(t_ext_2(1:6),max_temp_resultsR1E2ext(6,1:6),'--','Color',colours(2,:))
 plot(t_ext_3(1:6),max_temp_resultsR1E3ext(6,1:6),'--','Color',colours(3,:))
@@ -175,12 +184,12 @@ ylabel('Hot Side Wall Temperature [K]')
 hold off
 grid on
 box on
-legend('Engine 1','Engine 2','Engine 3','Engine 4','Engine 5','Location','southoutside','Numcolumns',2)
+legend('Engine 1','Engine 2','Engine 3','Engine 4','Engine 5','Max Service Temp','Melting Temp','Location','southoutside','Numcolumns',2)
 set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
 xlabel('Wall Thickness [m]')
 axis([0 0.08 0 3000])
 set(gcf,'units','centimeters','position',[5,5,width,height])
-saveas(gcf,'R1Betempvstwallengines','epsc')
+saveas(gcf,'R1Betempvstwallengines','png')
 
 figure
 semilogy(t_wall_1,m_dot_resultsR1E1(6,:),'Color',colours(1,:))
@@ -209,7 +218,7 @@ set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','o
 xlabel('Wall Thickness [m]')
 axis([0 0.07 0.1 10000])
 set(gcf,'units','centimeters','position',[5,5,width,height])
-saveas(gcf,'R1Bemdotvstwallengines','epsc')
+saveas(gcf,'R1Bemdotvstwallengines','png')
 
 figure
 plot(t_wall_1,q_dot_resultsR1E1(6,:),'Color',colours(1,:))
@@ -232,5 +241,5 @@ legend('Engine 1','Engine 2','Engine 3','Engine 4','Engine 5','Location','southo
 set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
 xlabel('Wall Thickness [m]')
 set(gcf,'units','centimeters','position',[5,5,width,height])
-%saveas(gcf,'.eps','epsc');
+%saveas(gcf,'.eps','png');
 

@@ -78,13 +78,13 @@ for counter = 1:loops %materials loop
     looper = looper+1;
 end
 
-m_dot_resultsR3E1 = m_dot_results';
-q_dot_resultsR3E1 = q_dot_results';
-max_temp_resultsR3E1 = max_temp_results';
+m_dot_resultsR4E1 = m_dot_results';
+q_dot_resultsR4E1 = q_dot_results';
+max_temp_resultsR4E1 = max_temp_results';
 
-save('C:\Users\Will\New folder\FYP Code\Results\Run 3\q_dot_resultsR3E1.mat','q_dot_resultsR3E1')
-save('C:\Users\Will\New folder\FYP Code\Results\Run 3\m_dot_resultsR3E1.mat','m_dot_resultsR3E1')
-save('C:\Users\Will\New folder\FYP Code\Results\Run 3\max_temp_resultsR3E1.mat','max_temp_resultsR3E1')
+save('C:\Users\Will\New folder\FYP Code\Results\Run 4\q_dot_resultsR4E1.mat','q_dot_resultsR4E1')
+save('C:\Users\Will\New folder\FYP Code\Results\Run 4\m_dot_resultsR4E1.mat','m_dot_resultsR4E1')
+save('C:\Users\Will\New folder\FYP Code\Results\Run 4\max_temp_resultsR4E1.mat','max_temp_resultsR4E1')
 
 beep
 pause(5)

@@ -12,6 +12,8 @@ load n2o %loads nitrous virial equations data file - OBSOLETE WITH COOLPROP
 load materials
 load materials_list
 
+tic
+
 looper = 4;
 %{
     format of Materials table:
@@ -23,7 +25,7 @@ looper = 4;
     Heat Capacity 4 
     Density 5
 %}
-cooled_sections = 2;
+cooled_sections = 1;
 animate = 0; % option to plot animated change in temperature
 accurate_geom = 1;
 plotting_general = 1;
@@ -74,18 +76,29 @@ T_c = coolPropNos('Tcrit','T',T_1,'P',P_1);
 %axial distance, given a set of input parameters and assuming a conical
 %expansion section. Combustion properties are given by NASA tool CEAOnline
 
-nozzle.Pcc = 35e5; %combustion chamber pressure
+%% Lemiux engine
+nozzle.Pcc = 13e5; %combustion chamber pressure
 nozzle.gamma = 1.1726; %specific heat ratio
 nozzle.Patm = 101325; %ambient (exit) pressure
-nozzle.Rcc = 0.02; %combustion chamber diameter
-nozzle.m_dot = 0.15; %kg/s, total mass flow rate
+nozzle.Rcc = 0.101; %combustion chamber radius
+nozzle.m_dot = 1.657; %kg/s, total mass flow rate
 nozzle.m_molar = 30.53e-3; %kg/mol of reaction products
-nozzle.Tcc = 3252; %combustion chamber stagnation temperature
-nozzle.c_star = 1321; %characteristic velocity
+nozzle.Tcc = 2982; %combustion chamber stagnation temperature
+nozzle.c_star = 1128; %characteristic velocity
 nozzle.g = 9.81; %gravity
-nozzle.cooled_sections = cooled_sections; %specifies which sections of the nozzle are to be cooled (see above)
 
-nozzle.t_wall = 0.0035; %wall thickness
+% nozzle.Pcc = 35e5; %combustion chamber pressure
+% nozzle.gamma = 1.1726; %specific heat ratio
+% nozzle.Patm = 101325; %ambient (exit) pressure
+% nozzle.Rcc = 0.276; %combustion chamber radius
+% nozzle.m_dot = 8; %kg/s, total mass flow rate
+% nozzle.m_molar = 30.53e-3; %kg/mol of reaction products
+% nozzle.Tcc = 3252; %combustion chamber stagnation temperature
+% nozzle.c_star = 1321; %characteristic velocity
+% nozzle.g = 9.81; %gravity
+ nozzle.cooled_sections = cooled_sections; %specifies which sections of the nozzle are to be cooled (see above)
+
+nozzle.t_wall = 0.01; %wall thickness
 
 nozzle = nozzleGeometry(nozzle); %Call nozzle geometry function to get a conical nozzle shape
 
@@ -170,7 +183,12 @@ if accurate_geom == 0
 elseif accurate_geom == 1
     
     %coolant side
-    %thermalBC(model,'Edge',4,'HeatFlux',coolVal); %supercritical coolant
+%     thermalBC(model,'Edge',7,'HeatFlux',coolVal); %supercritical coolant
+%     thermalBC(model,'Edge',8,'HeatFlux',coolVal);
+%     thermalBC(model,'Edge',14,'HeatFlux',coolVal);
+%     thermalBC(model,'Edge',9,'HeatFlux',coolVal);
+%     thermalBC(model,'Edge',10,'HeatFlux',coolVal);
+    
     thermalBC(model,'Edge',7,'Temperature',T_c); %nucleate boiling coolant
     thermalBC(model,'Edge',8,'Temperature',T_c);
     thermalBC(model,'Edge',14,'Temperature',T_c);
@@ -247,7 +265,7 @@ end
 
 %cooling segment
 h_vap_1 = coolPropNos('H','P',P_1,'Q',1)-coolPropNos('H','P',P_1,'Q',0); %unit?
-quality_limit = 0.5;
+quality_limit = 0.9;
 cool_cap = (quality_limit*h_vap_1)+coolPropNos('H','P',P_1,'Q',0) - h_1; %
 m_dot_cool = Q_c/cool_cap;
 
@@ -260,12 +278,12 @@ if plotting_general == 1
     
     %Edges plot
     figure
-    %plot(nozzle.outer_x_array,nozzle.outer_y_array,'xr')
-    %hold on
-    %plot(nozzle.x_array,nozzle.y_array,'xg')
+    plot(nozzle.outer_x_array,nozzle.outer_y_array,'xr')
+    hold on
+    plot(nozzle.x_array,nozzle.y_array,'xg')
     pdegplot(model,'EdgeLabels','on') %plot geometry with labelled edge
     axis('image')
-   % hold off
+    hold off
     xlabel('Axial Distance from Throat [m]')
     ylabel('Radial Distance from Centerline [m]')
     set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
@@ -335,8 +353,8 @@ if plotting_general == 1
     n = 1000;
     T = linspace(270,309.559,n-1);
     T = [T 309.56];
-    width = 18;
-    height = 15;
+    width = 15;
+    height = 12;
 
     P_arr = linspace(88000,7.245e+06,n);
     for i = 1:n
@@ -374,10 +392,32 @@ if plotting_general == 1
     legend('Saturated Liquid','Saturated Vapour','Cooling Loop','Isotherms','orientation','horizontal','Location','northoutside')
     set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
     set(gcf,'units','centimeters','position',[5,5,width,height])
+    saveas(gcf,'phdiagram','epsc')
    
 end
 
+%nozzle flow distribution plot
+load colours.mat
+figure
+plot(nozzle.x_array,nozzle.M_array,'-','Color',colours(1,:))
+hold on
+plot(nozzle.x_array,nozzle.P_array,'-','Color',colours(2,:))
+plot(nozzle.x_array,nozzle.T_array,'-','Color',colours(3,:))
+plot(nozzle.x_array,nozzle.rho_array,'-','Color',colours(4,:))
+hold off
+grid on
+box on
+legend('Mach','Static Pressure','Static Temp.','Density','Location','southoutside','Numcolumns',2)
+set(gca,'FontSize',fontsize,'YMinorTick','on', 'YMinorGrid','on','XMinorTick','on', 'XMinorGrid','on','FontName', fonttype)
+xlabel('Axial Position [m]')
+ylabel('Normalised Magnitude')
+axis([-0.15 0.07 0 2.5])
+set(gcf,'units','centimeters','position',[5,5,10,10])
+saveas(gcf,'nozzleDistro','epsc');
 
+toc
+beep
+beep
 
 %% Nozzle Side Heat Transfer
 function q_dot = nozzleFlux(location,state)
@@ -463,6 +503,7 @@ T_c_i = convtemp(300,'K','R');
 C_nos = coolPropNos('C','T',T_c,'Q',0); %J/kg*K
 Cp_nos_i = C_nos/4192.11; %BTU/lbm*R
 k_nos = 0.0915; % Thermal conductivity of nitrous
+molar_nos = 0.044;
 
 mu_nos_i = (46.6e-10)*(molar_nos^0.5)*(T_c^0.6); %lbm/in*s, dynamic viscosity of nitrous [2]
 mu_nos = mu_nos_i/17.83;

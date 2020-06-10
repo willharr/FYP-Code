@@ -172,12 +172,17 @@ if accurate_geom == 0
 elseif accurate_geom == 1
     
     %coolant side
-    %thermalBC(model,'Edge',4,'HeatFlux',coolVal); %supercritical coolant
-    thermalBC(model,'Edge',7,'Temperature',T_c); %nucleate boiling coolant
-    thermalBC(model,'Edge',8,'Temperature',T_c);
-    thermalBC(model,'Edge',14,'Temperature',T_c);
-    thermalBC(model,'Edge',9,'Temperature',T_c);
-    thermalBC(model,'Edge',10,'Temperature',T_c);
+    thermalBC(model,'Edge',7,'HeatFlux',coolVal); %supercritical coolant
+    thermalBC(model,'Edge',8,'HeatFlux',coolVal);
+    thermalBC(model,'Edge',14,'HeatFlux',coolVal);
+    thermalBC(model,'Edge',9,'HeatFlux',coolVal);
+    thermalBC(model,'Edge',10,'HeatFlux',coolVal);
+    
+%     thermalBC(model,'Edge',7,'Temperature',T_c); %nucleate boiling coolant
+%     thermalBC(model,'Edge',8,'Temperature',T_c);
+%     thermalBC(model,'Edge',14,'Temperature',T_c);
+%     thermalBC(model,'Edge',9,'Temperature',T_c);
+%     thermalBC(model,'Edge',10,'Temperature',T_c);
 
     %side walls - insulated
     thermalBC(model,'Edge',2,'HeatFlux',0);
@@ -464,6 +469,7 @@ molar_nos = 0.044; %kg/mol - molar mass of nitrous oxide
 C_nos = C_nos/0.044; %J/kg*K - convert to per-mass value
 Cp_nos_i = C_nos/4192.11; %BTU/lbm*R
 k_nos = 0.0915; % Thermal conductivity of nitrous
+molar_nos = 0.044;
 
 mu_nos_i = (46.6e-10)*(molar_nos^0.5)*(T_c^0.6); %lbm/in*s, dynamic viscosity of nitrous [2]
 mu_nos = mu_nos_i/17.83;
